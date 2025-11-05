@@ -17,6 +17,8 @@ import { TutorialOverlay } from "./components/TutorialOverlay";
 import { GridSizeSelector } from "./components/GridSizeSelector";
 import { availableTileBlocks, availableBackgrounds } from "./components/tileBlockData";
 import "./styles/globals.css";
+import SoundToggle from './components/SoundToggle';
+import audioManager from '../../audioManager';
 
 type Screen =
   | "splash"
