@@ -17,8 +17,8 @@ import { TutorialOverlay } from "./components/TutorialOverlay";
 import { GridSizeSelector } from "./components/GridSizeSelector";
 import { availableTileBlocks, availableBackgrounds } from "./components/tileBlockData";
 import "./styles/globals.css";
-import SoundToggle from './components/SoundToggle';
-import audioManager from '../../audioManager';
+import SoundToggle from "./components/SoundToggle";
+import audioManager from "../../audioManager";
 
 type Screen =
   | "splash"
@@ -34,11 +34,9 @@ type Screen =
   | "statistics";
 
 export default function App() {
-  const [currentScreen, setCurrentScreen] =
-    useState<Screen>("splash");
+  const [currentScreen, setCurrentScreen] = useState<Screen>("splash");
   const [coins, setCoins] = useState(1500);
-  const [transitionDirection, setTransitionDirection] =
-    useState<"left" | "right">("left");
+  const [transitionDirection, setTransitionDirection] = useState<"left" | "right">("left");
   const [activeTheme, setActiveTheme] = useState("neon-cyber");
   const [ownedThemes, setOwnedThemes] = useState<string[]>(["neon-cyber"]);
   const [ownedTileBlocks, setOwnedTileBlocks] = useState<string[]>(["neon-classic"]);
@@ -58,53 +56,65 @@ export default function App() {
     description: string;
   } | null>(null);
 
-  // Check if user has seen onboarding
+  // Проверяем, видел ли пользователь онбординг
   useEffect(() => {
     const seen = localStorage.getItem("hasSeenOnboarding");
     setHasSeenOnboarding(seen === "true");
   }, []);
 
-  // Show daily reward after a delay on menu screen
+  // Показ ежедневной награды
   useEffect(() => {
     if (currentScreen === "menu" && hasSeenOnboarding) {
       const timer = setTimeout(() => {
         const lastClaim = localStorage.getItem("lastDailyReward");
         const today = new Date().toDateString();
-        
+
         if (lastClaim !== today) {
           setShowDailyReward(true);
         }
       }, 2000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [currentScreen, hasSeenOnboarding]);
 
+  // === 🎁 Обработка награды дня ===
   const handleDailyRewardClaim = (rewardCoins: number) => {
     setCoins(coins + rewardCoins);
     localStorage.setItem("lastDailyReward", new Date().toDateString());
-    
-    // Show achievement toast
+
+    try {
+      audioManager?.play?.("coin");
+    } catch (err) {
+      console.warn("Audio playback failed:", err);
+    }
+
     setAchievementToast({
       icon: "💰",
       name: "Daily Reward Claimed!",
       description: `You earned ${rewardCoins} coins`,
     });
-    
+
     setTimeout(() => setAchievementToast(null), 4000);
-    
-    // Increment day (loop back to 1 after 7)
     setDailyRewardDay((prev) => (prev >= 7 ? 1 : prev + 1));
   };
 
+  // === 🚀 Завершение онбординга ===
   const handleOnboardingComplete = () => {
     localStorage.setItem("hasSeenOnboarding", "true");
     setHasSeenOnboarding(true);
+
+    try {
+      audioManager?.play?.("coin");
+    } catch (err) {
+      console.warn("Audio playback failed:", err);
+    }
+
     setCurrentScreen("menu");
   };
 
+  // === Навигация ===
   const handleNavigate = (screen: Screen) => {
-    // Determine transition direction
     const screenOrder: Screen[] = [
       "menu",
       "game",
@@ -120,9 +130,7 @@ export default function App() {
     const nextIndex = screenOrder.indexOf(screen);
 
     if (currentIndex !== -1 && nextIndex !== -1) {
-      setTransitionDirection(
-        nextIndex > currentIndex ? "left" : "right",
-      );
+      setTransitionDirection(nextIndex > currentIndex ? "left" : "right");
     }
 
     setCurrentScreen(screen);
@@ -161,7 +169,7 @@ export default function App() {
         >
           {currentScreen === "splash" && (
             <SplashScreen
-              onComplete={() => 
+              onComplete={() =>
                 setCurrentScreen(hasSeenOnboarding ? "menu" : "onboarding")
               }
             />
@@ -189,49 +197,49 @@ export default function App() {
 
           {currentScreen === "game" && (
             <GameScreen
-              onNavigate={(screen) =>
-                handleNavigate(screen as Screen)
-              }
+              onNavigate={(screen) => handleNavigate(screen as Screen)}
               gridSize={selectedGridSize}
               targetTile={2048}
               timedMode={false}
-              tileBlock={availableTileBlocks.find(b => b.id === activeTileBlock)}
-              background={availableBackgrounds.find(b => b.id === activeBackground)}
+              tileBlock={availableTileBlocks.find((b) => b.id === activeTileBlock)}
+              background={availableBackgrounds.find((b) => b.id === activeBackground)}
             />
           )}
 
           {currentScreen === "pvp" && (
             <PvPLobby
-              onNavigate={(screen) =>
-                handleNavigate(screen as Screen)
-              }
+              onNavigate={(screen) => handleNavigate(screen as Screen)}
               gridSize={selectedGridSize}
             />
           )}
 
           {currentScreen === "leaderboard" && (
-            <Leaderboard
-              onNavigate={(screen) =>
-                handleNavigate(screen as Screen)
-              }
-            />
+            <Leaderboard onNavigate={(screen) => handleNavigate(screen as Screen)} />
           )}
 
           {currentScreen === "shop" && (
             <Shop
-              onNavigate={(screen) =>
-                handleNavigate(screen as Screen)
-              }
+              onNavigate={(screen) => handleNavigate(screen as Screen)}
               coins={coins}
               onCoinsChange={setCoins}
               ownedThemes={ownedThemes}
               onThemePurchase={(themeId) => {
+                try {
+                  audioManager?.play?.("purchase");
+                } catch (err) {
+                  console.warn("Audio playback failed:", err);
+                }
                 if (!ownedThemes.includes(themeId)) {
                   setOwnedThemes([...ownedThemes, themeId]);
                 }
               }}
               ownedTileBlocks={ownedTileBlocks}
               onTileBlockPurchase={(blockId) => {
+                try {
+                  audioManager?.play?.("purchase");
+                } catch (err) {
+                  console.warn("Audio playback failed:", err);
+                }
                 if (!ownedTileBlocks.includes(blockId)) {
                   setOwnedTileBlocks([...ownedTileBlocks, blockId]);
                   setActiveTileBlock(blockId);
@@ -239,6 +247,11 @@ export default function App() {
               }}
               ownedBackgrounds={ownedBackgrounds}
               onBackgroundPurchase={(backgroundId) => {
+                try {
+                  audioManager?.play?.("purchase");
+                } catch (err) {
+                  console.warn("Audio playback failed:", err);
+                }
                 if (!ownedBackgrounds.includes(backgroundId)) {
                   setOwnedBackgrounds([...ownedBackgrounds, backgroundId]);
                   setActiveBackground(backgroundId);
@@ -248,18 +261,12 @@ export default function App() {
           )}
 
           {currentScreen === "settings" && (
-            <Settings
-              onNavigate={(screen) =>
-                handleNavigate(screen as Screen)
-              }
-            />
+            <Settings onNavigate={(screen) => handleNavigate(screen as Screen)} />
           )}
 
           {currentScreen === "profile" && (
             <Profile
-              onNavigate={(screen) =>
-                handleNavigate(screen as Screen)
-              }
+              onNavigate={(screen) => handleNavigate(screen as Screen)}
               activeTheme={activeTheme}
               onThemeChange={setActiveTheme}
               ownedThemes={ownedThemes}
@@ -274,20 +281,14 @@ export default function App() {
 
           {currentScreen === "challenges" && (
             <Challenges
-              onNavigate={(screen) =>
-                handleNavigate(screen as Screen)
-              }
+              onNavigate={(screen) => handleNavigate(screen as Screen)}
               coins={coins}
               onCoinsChange={setCoins}
             />
           )}
 
           {currentScreen === "statistics" && (
-            <Statistics
-              onNavigate={(screen) =>
-                handleNavigate(screen as Screen)
-              }
-            />
+            <Statistics onNavigate={(screen) => handleNavigate(screen as Screen)} />
           )}
         </motion.div>
       </AnimatePresence>
@@ -301,10 +302,7 @@ export default function App() {
       />
 
       {/* Achievement Toast */}
-      <AchievementToast
-        achievement={achievementToast}
-        onClose={() => setAchievementToast(null)}
-      />
+      <AchievementToast achievement={achievementToast} onClose={() => setAchievementToast(null)} />
 
       {/* Tutorial Overlay */}
       <TutorialOverlay
@@ -335,7 +333,6 @@ export default function App() {
 
       {/* Ambient Background Effects */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {/* Floating orbs */}
         <motion.div
           animate={{
             x: [0, 100, 0],
